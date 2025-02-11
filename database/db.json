@@ -1,0 +1,120 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Laptop HP Pavilion",
+      "type": "Informatique",
+      "barcode": "1234567890123",
+      "price": 1200,
+      "solde": 1100,
+      "supplier": "HP",
+      "image": "https://mediazone.ma/uploads/images/products/16412/landing-page/assets/images/swiper-1.png",
+      "stocks": [
+        {
+          "id": 1999,
+          "name": "Gueliz B2",
+          "quantity": 21,
+          "localisation": {
+            "city": "Marrakesh",
+            "latitude": 31.628674,
+            "longitude": -7.992047
+          }
+        },
+        {
+          "id": 2991,
+          "name": "Lazari H2",
+          "quantity": 24,
+          "localisation": {
+            "city": "Oujda",
+            "latitude": 34.689404,
+            "longitude": -1.912823
+          }
+        }
+      ],
+      "editedBy": [
+        {
+          "warehousemanId": 1333,
+          "at": "2025-02-02"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Clavier Mécanique Logitech",
+      "type": "Accessoires",
+      "barcode": "9876543210987",
+      "price": 100,
+      "supplier": "Logitech",
+      "image": "https://in-media.apjonlinecdn.com/catalog/product/cache/b3b166914d87ce343d4dc5ec5117b502/8/a/8aa01aa.png",
+      "stocks": [
+        {
+          "id": 1999,
+          "name": "Gueliz B2",
+          "quantity": 20,
+          "localisation": {
+            "city": "Marrakesh",
+            "latitude": 31.628674,
+            "longitude": -7.992047
+          }
+        },
+        {
+          "id": 2991,
+          "name": "Lazari H2",
+          "quantity": 5,
+          "localisation": {
+            "city": "Oujda",
+            "latitude": 34.689404,
+            "longitude": -1.912823
+          }
+        }
+      ],
+      "editedBy": [
+        {
+          "warehousemanId": 1444,
+          "at": "2025-02-02"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Pc Gamer Omen By HP",
+      "type": "Informatique",
+      "barcode": "1236543210987",
+      "price": 11000,
+      "supplier": "HP",
+      "image": "https://technoplace.ma/11482-large_default/hp-omen-17-i7-7700hq-173-16gb-2tb-geforce-gtx-10.jpg",
+      "stocks": [],
+      "editedBy": [
+        {
+          "warehousemanId": 1444,
+          "at": "2025-02-02"
+        }
+      ]
+    }
+  ],
+  "warehousemans": [
+    {
+      "id": 1333,
+      "name": "Amine Boutaleb",
+      "dob": "1988-05-02",
+      "city": "Oujda",
+      "secretKey": "AH90907J",
+      "warehouseId": 1999
+    },
+    {
+      "id": 1444,
+      "name": "Karim El Mansouri",
+      "dob": "1990-09-15",
+      "city": "Marrakesh",
+      "secretKey": "RK189987A",
+      "warehouseId": 2991
+    }
+  ],
+  "statistics": {
+    "totalProducts": 3,
+    "outOfStock": 1,
+    "totalStockValue": 70,
+    "mostAddedProducts": [],
+    "mostRemovedProducts": []
+  }
+}
