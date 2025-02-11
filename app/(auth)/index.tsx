@@ -1,20 +1,28 @@
-import {SafeAreaView, StyleSheet, Text, View} from "react-native";
+import {StyleSheet, Text, TextInput, TouchableOpacity, View} from "react-native";
+import {useState} from "react";
+import AuthForm from "@/components/auth/AuthForm";
 
 const AuthScreen = () => {
     return (
-        <SafeAreaView >
-            <Text style={styles.container}>
-                Hello from Auth page
-            </Text>
-        </SafeAreaView>
+        <View style={styles.container}>
+            <AuthForm />
+        </View>
     )
 }
 
 const styles = StyleSheet.create({
     container: {
-        flexDirection: 'row',
-        gap: 8,
-    }
-})
+        flex: 1,
+        padding: 20,
+        justifyContent: 'center',
+        backgroundColor: '#fff',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 30,
+    },
+});
 
 export default AuthScreen;
