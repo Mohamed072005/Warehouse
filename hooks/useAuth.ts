@@ -3,6 +3,8 @@ import {Keyboard ,Animated} from "react-native";
 import {router} from "expo-router";
 import axios from "axios";
 import axiosClient from "@/lib/api/axiosClient";
+import {setLocalStorage} from "@/lib/localStorages/storageManager";
+import {WareHouseMan} from "@/lib/types/WareHouseMan";
 
 export const useAuth = () => {
     const [secretKey, setSecretKey] = useState<string>('');
@@ -44,8 +46,10 @@ export const useAuth = () => {
         try {
             const response = await axiosClient.get('/warehousemans');
             const warehousemans = response.data;
-            const warehouseman = warehousemans.find((warehouseman: any) => warehouseman.secretKey === secretKey);
+            const warehouseman: WareHouseMan = warehousemans.find((warehouseman: WareHouseMan) => warehouseman.secretKey === secretKey);
             if(warehouseman) {
+                console.log(warehouseman.id);
+                await setLocalStorage('warehouseman_id', warehouseman.id);
                 router.push("/(tabs)");
             } else {
                 shake();

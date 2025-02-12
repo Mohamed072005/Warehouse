@@ -1,9 +1,10 @@
 import {SafeAreaView, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {Link, router} from "expo-router";
+import {removeLocalStorage} from "@/lib/localStorages/storageManager";
 
 const HomeScreen = () => {
     const handelClick = () => {
-        console.log("HandelClick");
+        removeLocalStorage('warehousemans_id');
         router.replace("../");
     }
     return (
@@ -23,6 +24,7 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: 60,
     },
     button: {
         alignItems: 'center',

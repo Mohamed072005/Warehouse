@@ -1,9 +1,8 @@
 import axios from "axios";
-import asyncStorage from '@react-native-async-storage/async-storage'
-import {router} from "expo-router";
+import {config} from "@/config/config";
 
 const axiosClient = axios.create({
-    baseURL: 'http://10.0.2.2:5000',
+    baseURL: config.baseURL,
 })
 
 export default axiosClient;

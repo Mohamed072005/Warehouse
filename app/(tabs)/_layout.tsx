@@ -2,9 +2,10 @@ import {Stack, Tabs} from "expo-router";
 import {Colors} from "@/constants/Colors";
 import {HapticTab} from "@/components/HapticTab";
 import TabBarBackground from "@/components/ui/TabBarBackground";
-import {Platform, useColorScheme} from "react-native";
+import {Platform, SafeAreaView, useColorScheme} from "react-native";
 import {IconSymbol} from "@/components/ui/IconSymbol";
 import React from "react";
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 const HomeLayout: React.FC = () => {
     return (
@@ -26,9 +27,15 @@ const HomeLayout: React.FC = () => {
                 name="index"
                 options={{
                     title: 'Home',
-                    tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+                    tabBarIcon: ({color}) => <IconSymbol size={28} name="house.fill" color={color}/>,
                 }}
             />
+            <Tabs.Screen
+                name="scanner"
+                options={{
+                    title: 'Scanner',
+                    tabBarIcon: ({color}) => <MaterialCommunityIcons name="barcode-scan" size={24} color={color}/>,
+                }}/>
         </Tabs>
     )
 }
