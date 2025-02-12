@@ -46,7 +46,7 @@ export const useAuth = () => {
             const warehousemans = response.data;
             const warehouseman = warehousemans.find((warehouseman: any) => warehouseman.secretKey === secretKey);
             if(warehouseman) {
-                router.replace('/(home)/home/index');
+                router.push("/(tabs)");
             } else {
                 shake();
                 setLoading(false);
