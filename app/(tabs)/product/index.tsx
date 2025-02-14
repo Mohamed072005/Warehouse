@@ -1,4 +1,14 @@
-import { StyleSheet, Text, View, SafeAreaView, TextInput, FlatList, TouchableOpacity, RefreshControl } from "react-native";
+import {
+    StyleSheet,
+    Text,
+    View,
+    SafeAreaView,
+    TextInput,
+    FlatList,
+    TouchableOpacity,
+    RefreshControl,
+    Image
+} from "react-native";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import {useEffect, useState} from "react";
 import {Product} from "@/lib/types/Product";
@@ -26,13 +36,64 @@ export const ProductScreen = () => {
         setTimeout(() => setRefreshing(false), 1000);
     };
 
+    const ProductQuantityAndStock = ({ item }) => {
+        let stockStatusColor, stockStatusText;
+        let quantity = item.stocks.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+        // Determine stock status and color
+        stockStatusColor =
+            quantity === 0
+                ? "#EF4444" // Red for out of stock
+                : quantity <= 10
+                    ? "#FFCC00" // Yellow for low stock
+                    : "#10B981"; // Green for normal stock
+
+        stockStatusText =
+            quantity === 0
+                ? "Stock épuisé"
+                : quantity <= 10
+                    ? "Stock faible"
+                    : "En stock";
+        return (
+            <>
+                <View style={styles.infoRow}>
+                    <View style={styles.stockStatus}>
+                        <View
+                            style={[
+                                styles.stockIndicator,
+                                {backgroundColor: stockStatusColor},
+                            ]}
+                        />
+                        <Text style={[styles.stockText, {color: stockStatusColor}]}>
+                            {stockStatusText}
+                        </Text>
+                    </View>
+                </View>
+            </>
+        )
+    };
+
     const renderProductCard = ({ item }) => (
         <TouchableOpacity style={styles.productCard}>
+            {item.image !== null ? (
+                <View style={styles.imageContainer}>
+                    <Image
+                        source={{uri: item?.image}}
+                        style={styles.productImage}
+                        resizeMode="cover"
+                    />
+                </View>
+            ) : (
+                <View style={styles.imageContainer}>
+                    <Image
+                        source={require('../../../assets/images/Apr20_07_1162572100.jpg')}
+                        style={styles.productImage}
+                        resizeMode="cover"
+                    />
+                </View>
+            )}
             <View style={styles.productHeader}>
                 <View>
                     <Text style={styles.productName}>{item.name}</Text>
-                    <Text style={styles.productName}>{item.id}</Text>
-                    <Text style={styles.productSku}>SKU: {item.id}</Text>
                 </View>
                 <TouchableOpacity style={styles.moreButton}>
                     <MaterialCommunityIcons name="dots-vertical" size={24} color="#6D28D9" />
@@ -50,32 +111,10 @@ export const ProductScreen = () => {
                         <Text style={styles.infoText}>{item.price}</Text>
                     </View>
                 </View>
-
-                <View style={styles.stockStatus}>
-                    <View
-                        style={[
-                            styles.stockIndicator,
-                            { backgroundColor: item.quantity <= item.minStock ? '#EF4444' : '#10B981' }
-                        ]}
-                    />
-                    <Text style={[
-                        styles.stockText,
-                        { color: item.quantity <= item.minStock ? '#EF4444' : '#10B981' }
-                    ]}>
-                        {item.quantity <= item.minStock ? 'Stock Faible' : 'Stock Normal'}
-                    </Text>
-                </View>
+                <ProductQuantityAndStock item={item} />
             </View>
 
             <View style={styles.actionButtons}>
-                <TouchableOpacity style={styles.actionButton}>
-                    <MaterialCommunityIcons name="plus" size={20} color="#6D28D9" />
-                    <Text style={styles.actionButtonText}>Ajouter</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
-                    <MaterialCommunityIcons name="minus" size={20} color="#6D28D9" />
-                    <Text style={styles.actionButtonText}>Retirer</Text>
-                </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.actionButton}
                     onPress={() =>
@@ -85,7 +124,7 @@ export const ProductScreen = () => {
                         })
                     }>
                     <MaterialCommunityIcons name="pencil" size={20} color="#6D28D9" />
-                    <Text style={styles.actionButtonText}>Modifier</Text>
+                    <Text style={styles.actionButtonText}>View Details</Text>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
@@ -119,9 +158,9 @@ export const ProductScreen = () => {
                 }
             />
 
-            <TouchableOpacity style={styles.fab}>
-                <MaterialCommunityIcons name="plus" size={24} color="white" />
-            </TouchableOpacity>
+            {/*<TouchableOpacity style={styles.fab}>*/}
+            {/*    <MaterialCommunityIcons name="plus" size={24} color="white" />*/}
+            {/*</TouchableOpacity>*/}
         </SafeAreaView>
     );
 };
@@ -238,8 +277,8 @@ const styles = StyleSheet.create({
     },
     actionButtons: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         borderTopWidth: 1,
+        justifyContent: 'center',
         borderTopColor: '#E5E7EB',
         paddingTop: 12,
         marginTop: 12,
@@ -272,6 +311,17 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
+    },
+    imageContainer: {
+        height: 200,
+        backgroundColor: 'white',
+        margin: 16,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    productImage: {
+        width: '100%',
+        height: '100%',
     },
 });
 

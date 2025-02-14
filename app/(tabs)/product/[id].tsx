@@ -7,8 +7,7 @@ import {Product} from "@/lib/types/Product";
 export const ProductDetails = () => {
     const { productDetail } = useLocalSearchParams<{ productDetail: string }>();
     const [loading, setLoading] = useState<boolean>(true);
-
-    // Parse the productDetail string into a Product object
+    console.log(productDetail);
     const product: Product = JSON.parse(productDetail);
 
     useEffect(() => {
@@ -20,7 +19,6 @@ export const ProductDetails = () => {
     if (loading) {
         return <Text>Loading...</Text>;
     }
-    // Ensure product is valid
     if (!product) {
         return <Text>Product not found</Text>;
     }
@@ -32,23 +30,30 @@ export const ProductDetails = () => {
             <ScrollView>
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity style={styles.backButton}>
-                        <MaterialCommunityIcons name="arrow-left" size={24} color="#6D28D9" />
-                    </TouchableOpacity>
+                    {/*<TouchableOpacity style={styles.backButton}>*/}
+                    {/*    <MaterialCommunityIcons name="arrow-left" size={24} color="#6D28D9" />*/}
+                    {/*</TouchableOpacity>*/}
                     <Text style={styles.headerTitle}>Détails du Produit</Text>
-                    <TouchableOpacity style={styles.editButton}>
-                        <MaterialCommunityIcons name="pencil" size={24} color="#6D28D9" />
-                    </TouchableOpacity>
                 </View>
 
                 {/* Product Image */}
-                <View style={styles.imageContainer}>
-                    <Image
-                        source={{ uri: product?.image }}
-                        style={styles.productImage}
-                        resizeMode="contain"
-                    />
-                </View>
+                {product?.image !== null ? (
+                    <View style={styles.imageContainer}>
+                        <Image
+                            source={{ uri: product?.image }}
+                            style={styles.productImage}
+                            resizeMode="cover"
+                        />
+                    </View>
+                ): (
+                    <View style={styles.imageContainer}>
+                        <Image
+                            source={require('../../../assets/images/Apr20_07_1162572100.jpg')}
+                            style={styles.productImage}
+                            resizeMode="cover"
+                        />
+                    </View>
+                )}
 
                 {/* Product Info Card */}
                 <View style={styles.card}>
@@ -71,7 +76,7 @@ export const ProductDetails = () => {
                         </View>
                         <View style={styles.priceItem}>
                             <Text style={styles.priceLabel}>Prix Soldé</Text>
-                            <Text style={styles.discountPrice}>{product?.solde} MAD</Text>
+                            <Text style={styles.discountPrice}>{product?.solde || '0'} MAD</Text>
                         </View>
                     </View>
 
@@ -127,6 +132,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8F7FF',
+        marginTop: 40
     },
     header: {
         flexDirection: 'row',

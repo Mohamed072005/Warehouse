@@ -24,7 +24,7 @@ interface NewProduct {
     barcode: string;
     price: number;
     supplier: string;
-    stock: [{
+    stocks: [{
         id: string,
         quantity: number
     }]
@@ -47,7 +47,7 @@ export default function BarcodeScanner() {
         price: 0,
         supplier: '',
         barcode: '',
-        stock: [{
+        stocks: [{
             id: '',
             quantity: 0
         }]
@@ -107,7 +107,7 @@ export default function BarcodeScanner() {
                                 id: PRD_ID,
                                 barcode: currentProduct.barcode,
                                 stocks: [
-                                    {id: warehouseman_id, quantity: newProduct.stock[0].quantity}
+                                    {id: warehouseman_id, quantity: newProduct.stocks[0].quantity}
                                 ]
                             }),
                         },
@@ -128,7 +128,7 @@ export default function BarcodeScanner() {
                         if (index === existingStockIndex) {
                             return {
                                 ...stock,
-                                quantity: stock.quantity + newProduct.stock[0].quantity, // Add the new quantity to the existing quantity
+                                quantity: stock.quantity + newProduct.stocks[0].quantity, // Add the new quantity to the existing quantity
                             };
                         }
                         return stock;
@@ -137,7 +137,7 @@ export default function BarcodeScanner() {
                     // If the warehouseman_id doesn't exist, add a new stock entry
                     updatedStock = [
                         ...currentProduct.stock,
-                        { id: warehouseman_id, quantity: newProduct.stock[0].quantity },
+                        { id: warehouseman_id, quantity: newProduct.stocks[0].quantity },
                     ];
                 }
 
@@ -160,7 +160,7 @@ export default function BarcodeScanner() {
                     console.log(error);
                 }
             } else {
-                console.log(`Added ${newProduct.stock[0].quantity} of ${currentProduct.name} - ${currentProduct.supplier} , id: ${currentProduct.id}`);
+                console.log(`Added ${newProduct.stocks[0].quantity} of ${currentProduct.name} - ${currentProduct.supplier} , id: ${currentProduct.id}`);
                 // await updateStock(currentProduct, newProduct.stock[0])
             }
 
@@ -173,7 +173,7 @@ export default function BarcodeScanner() {
                 price: 0,
                 supplier: '',
                 barcode: '',
-                stock: [{
+                stocks: [{
                     id: '',
                     quantity: 0
                 }]
@@ -281,11 +281,11 @@ export default function BarcodeScanner() {
                                         )}
                                         {renderField(
                                             'Quantity',
-                                            newProduct?.stock[0]?.quantity.toString() || '0',
+                                            newProduct?.stocks[0]?.quantity.toString() || '0',
                                             'Quantity you want to add',
                                             (value: any) => setNewProduct({
                                                 ...newProduct,
-                                                stock: [{...newProduct.stock[0], quantity: parseInt(value) || 0}]
+                                                stocks: [{...newProduct.stocks[0], quantity: parseInt(value) || 0}]
                                             }),
                                             'numeric',
                                             'input',
@@ -332,11 +332,11 @@ export default function BarcodeScanner() {
                                         )}
                                         {renderField(
                                             'Quantity',
-                                            newProduct.stock[0].quantity.toString(),
+                                            newProduct.stocks[0].quantity.toString(),
                                             'Enter quantity',
                                             (value: any) => setNewProduct({
                                                 ...newProduct,
-                                                stock: [{...newProduct.stock[0], quantity: parseInt(value) || 0}]
+                                                stocks: [{...newProduct.stocks[0], quantity: parseInt(value) || 0}]
                                             }),
                                             'numeric',
                                             'input',
@@ -356,7 +356,7 @@ export default function BarcodeScanner() {
                                                 price: 0,
                                                 supplier: '',
                                                 barcode: '',
-                                                stock: [{
+                                                stocks: [{
                                                     id: '',
                                                     quantity: 0
                                                 }]
