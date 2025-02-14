@@ -28,15 +28,10 @@ export const ProductDetails = () => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView>
-                {/* Header */}
                 <View style={styles.header}>
-                    {/*<TouchableOpacity style={styles.backButton}>*/}
-                    {/*    <MaterialCommunityIcons name="arrow-left" size={24} color="#6D28D9" />*/}
-                    {/*</TouchableOpacity>*/}
                     <Text style={styles.headerTitle}>Détails du Produit</Text>
                 </View>
 
-                {/* Product Image */}
                 {product?.image !== null ? (
                     <View style={styles.imageContainer}>
                         <Image
@@ -55,7 +50,6 @@ export const ProductDetails = () => {
                     </View>
                 )}
 
-                {/* Product Info Card */}
                 <View style={styles.card}>
                     <Text style={styles.productName}>{product?.name}</Text>
                     <View style={styles.badgeContainer}>
@@ -111,7 +105,6 @@ export const ProductDetails = () => {
                     ))}
                 </View>
 
-                {/* Edit History */}
                 <View style={styles.card}>
                     <Text style={styles.sectionTitle}>Historique des Modifications</Text>
                     {product?.editedBy?.map((edit, index) => (

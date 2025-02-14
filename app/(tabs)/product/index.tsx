@@ -32,20 +32,18 @@ export const ProductScreen = () => {
 
     const onRefresh = () => {
         setRefreshing(true);
-        // Add your refresh logic here
         setTimeout(() => setRefreshing(false), 1000);
     };
 
     const ProductQuantityAndStock = ({ item }) => {
         let stockStatusColor, stockStatusText;
         let quantity = item.stocks.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
-        // Determine stock status and color
         stockStatusColor =
             quantity === 0
-                ? "#EF4444" // Red for out of stock
+                ? "#EF4444"
                 : quantity <= 10
-                    ? "#FFCC00" // Yellow for low stock
-                    : "#10B981"; // Green for normal stock
+                    ? "#FFCC00"
+                    : "#10B981";
 
         stockStatusText =
             quantity === 0
@@ -157,10 +155,6 @@ export const ProductScreen = () => {
                     />
                 }
             />
-
-            {/*<TouchableOpacity style={styles.fab}>*/}
-            {/*    <MaterialCommunityIcons name="plus" size={24} color="white" />*/}
-            {/*</TouchableOpacity>*/}
         </SafeAreaView>
     );
 };
