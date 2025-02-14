@@ -1,7 +1,7 @@
 {
   "products": [
     {
-      "id": 1,
+      "id": "1",
       "name": "Laptop HP Pavilion",
       "type": "Informatique",
       "barcode": "1234567890123",
@@ -39,7 +39,7 @@
       ]
     },
     {
-      "id": 2,
+      "id": "2",
       "name": "Clavier Mécanique Logitech",
       "type": "Accessoires",
       "barcode": "9876543210987",
@@ -76,7 +76,7 @@
       ]
     },
     {
-      "id": 3,
+      "id": "3",
       "name": "Pc Gamer Omen By HP",
       "type": "Informatique",
       "barcode": "1236543210987",
@@ -92,53 +92,33 @@
       ]
     },
     {
-      "id": "198241",
+      "id": "881496",
       "name": "Sidi roubini",
       "type": "Lma",
-      "price": "4",
+      "price": "20",
       "supplier": "Akhenouch",
-      "barcode": "6111128000088",
-      "stock": [
-        {
-          "id": "",
-          "quantity": 100
-        }
-      ],
+      "barcode": "6111035000430",
       "stocks": [
         {
-          "id": "1444",
-          "quantity": 100
-        }
-      ]
-    },
-    {
-      "id": "157711",
-      "name": "Bimo b choklat",
-      "type": "Skimo",
-      "price": "20",
-      "supplier": "Wa3rin",
-      "barcode": "6111259344501",
-      "stock": [
-        {
-          "id": "",
-          "quantity": 5
+          "id": "915434",
+          "quantity": 200
         },
         {
-          "id": "1444",
-          "quantity": 3
+          "id": "781099",
+          "quantity": 2
         }
       ],
-      "stocks": [
+      "editedBy": [
         {
-          "id": "1444",
-          "quantity": 5
+          "warehousemanId": "1333",
+          "at": "2025-02-14"
         }
       ]
     }
   ],
   "warehousemans": [
     {
-      "id": 1333,
+      "id": "1333",
       "name": "Amine Boutaleb",
       "dob": "1988-05-02",
       "city": "Oujda",
@@ -146,7 +126,7 @@
       "warehouseId": 1999
     },
     {
-      "id": 1444,
+      "id": "1444",
       "name": "Karim El Mansouri",
       "dob": "1990-09-15",
       "city": "Marrakesh",

@@ -94,6 +94,7 @@ export default function BarcodeScanner() {
         try {
             const warehouseman_id = await getLocalStorage('warehouseman_id');
             const PRD_ID = Math.floor(Math.random() * 1000000).toString();
+            const STOCK_ID = Math.floor(Math.random() * 1000000).toString();
             if (isNewProduct) {
                 try {
                     const response = await useFetch<{ data: Product, status: number }>('products',
@@ -107,7 +108,13 @@ export default function BarcodeScanner() {
                                 id: PRD_ID,
                                 barcode: currentProduct.barcode,
                                 stocks: [
-                                    {id: warehouseman_id, quantity: newProduct.stocks[0].quantity}
+                                    {id: STOCK_ID, quantity: newProduct.stocks[0].quantity}
+                                ],
+                                editedBy: [
+                                    {
+                                        warehousemanId: warehouseman_id,
+                                        at: new Date().toISOString().slice(0, 10),
+                                    }
                                 ]
                             }),
                         },
@@ -117,18 +124,19 @@ export default function BarcodeScanner() {
                     console.log(error);
                 }
             } else if (isTransferProduct) {
-                const existingStockIndex = currentProduct.stock.findIndex(
-                    (stock: any) => stock.id === warehouseman_id
+
+                const existingStockIndex = currentProduct.editedBy.findIndex(
+                    (edit: any) => edit.warehousemanId === warehouseman_id
                 );
                 let updatedStock;
 
                 if (existingStockIndex !== -1) {
                     // If the warehouseman_id exists, update the quantity
-                    updatedStock = currentProduct.stock.map((stock: any, index: number) => {
+                    updatedStock = currentProduct.stocks.map((stock: any, index: number) => {
                         if (index === existingStockIndex) {
                             return {
                                 ...stock,
-                                quantity: stock.quantity + newProduct.stocks[0].quantity, // Add the new quantity to the existing quantity
+                                quantity: stock.quantity + newProduct.stocks[0].quantity,
                             };
                         }
                         return stock;
@@ -136,14 +144,18 @@ export default function BarcodeScanner() {
                 } else {
                     // If the warehouseman_id doesn't exist, add a new stock entry
                     updatedStock = [
-                        ...currentProduct.stock,
-                        { id: warehouseman_id, quantity: newProduct.stocks[0].quantity },
+                        ...currentProduct.stocks,
+                        { id: STOCK_ID, quantity: newProduct.stocks[0].quantity }
                     ];
                 }
 
                 const updatedData = {
                     ...currentProduct,
-                    stock: updatedStock, // Use the updated stock array
+                    stocks: updatedStock,
+                    editedBy: [{
+                        warehousemanId: warehouseman_id,
+                        at: new Date().toISOString().slice(0, 10),
+                    }]
                 };
                 try {
                     const response = await useFetch<{ product: Product, status: number }>(`products/${currentProduct.id}`,
