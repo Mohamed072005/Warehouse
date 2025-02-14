@@ -7,7 +7,7 @@ import {IconSymbol} from "@/components/ui/IconSymbol";
 import React from "react";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-const HomeLayout: React.FC = () => {
+const TabsLayout: React.FC = () => {
     return (
         <Tabs
             screenOptions={{
@@ -23,11 +23,21 @@ const HomeLayout: React.FC = () => {
                     default: {},
                 }),
             }}>
+
             <Tabs.Screen
                 name="index"
                 options={{
                     title: 'Home',
                     tabBarIcon: ({color}) => <IconSymbol size={28} name="house.fill" color={color}/>,
+                }}
+            />
+            <Tabs.Screen
+                name="product"
+                options={{
+                    title: 'Products',
+                    tabBarIcon: ({color}) => <MaterialCommunityIcons name="package-variant" size={24} color={color}/>,
+                    href: '/product',
+                    tabBarHideOnSubRoutes: true,
                 }}
             />
             <Tabs.Screen
@@ -40,4 +50,4 @@ const HomeLayout: React.FC = () => {
     )
 }
 
-export default HomeLayout
+export default TabsLayout

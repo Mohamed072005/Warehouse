@@ -1,19 +1,30 @@
-import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import { useState } from 'react';
-import { Button, StyleSheet, Text, TouchableOpacity, View, Modal, TextInput, Alert } from 'react-native';
+import {CameraView, CameraType, useCameraPermissions, BarcodeScanningResult} from 'expo-camera';
+import {useState} from 'react';
+import {
+    Button,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+    Modal,
+    TextInput,
+    Alert,
+    KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getLocalStorage} from "@/lib/localStorages/storageManager";
 import useApi from "@/hooks/useApi";
 import {Product} from "@/lib/types/Product";
+import {red} from "react-native-reanimated/lib/typescript/Colors";
 
 interface NewProduct {
     id: string;
     name: string;
     type: string;
     barcode: string;
-    price: string;
+    price: number;
     supplier: string;
-    stock:[{
+    stock: [{
         id: string,
         quantity: number
     }]
@@ -21,7 +32,8 @@ interface NewProduct {
 
 export default function BarcodeScanner() {
 
-    const { error, loading, useFetch } = useApi();
+    const {width} = useWindowDimensions();
+    const {error, loading, useFetch} = useApi();
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -32,7 +44,7 @@ export default function BarcodeScanner() {
         id: '',
         name: '',
         type: '',
-        price: '',
+        price: 0,
         supplier: '',
         barcode: '',
         stock: [{
@@ -42,86 +54,111 @@ export default function BarcodeScanner() {
     });
 
     if (!permission) {
-        return <View />;
+        return <View/>;
     }
 
     if (!permission.granted) {
         return (
             <View style={styles.container}>
                 <Text style={styles.message}>We need your permission to show the camera</Text>
-                <Button onPress={requestPermission} title="grant permission" />
+                <Button onPress={requestPermission} title="grant permission"/>
             </View>
         );
     }
 
-    const handleBarCodeScanned = async ({ type, data }: BarcodeScanningResult) => {
-        console.log(data);
+    const handleBarCodeScanned = async ({type, data}: BarcodeScanningResult) => {
         setScanned(true);
-        setCurrentProduct({ barcode: data });
-        const warehouseman_id = await getLocalStorage('warehouseman_id');
+        setCurrentProduct({barcode: data, stocks: []}); // Initialize with an empty stock array
+
         try {
-            const response = await useFetch<{ data: Product[], status: number }>('products', { method: 'GET' });
+            const response = await useFetch<{ data: Product[], status: number }>('products', {method: 'GET'});
             if (response?.status === 200) {
-                const correctProduct = response.data.filter((product: Product) => product.id === +data);
-                console.log(correctProduct);
-                if(correctProduct.length > 0){
-                    setCurrentProduct(correctProduct);
+                const correctProduct = response.data.filter((product: Product) => product.barcode === data);
+                if (correctProduct.length > 0) {
+                    setCurrentProduct(correctProduct[0]);
                     setIsNewProduct(false);
+                    setIsTransferProduct(true)
                     setModalVisible(true);
-                }else {
-                    setCurrentProduct({ barcode: data });
+                } else {
+                    setCurrentProduct({barcode: data, stock: []}); // Ensure stock is initialized
                     setIsNewProduct(true);
                     setModalVisible(true);
                 }
             }
-        }catch (error: any) {
+        } catch (error: any) {
             console.log(error);
         }
     };
 
     const handleSubmit = async () => {
         try {
-            const warehouseman = (await AsyncStorage.getItem('warehouseman')) || '';
-            const warehouseman_id = JSON.parse(warehouseman).warehouseId;
-
+            const warehouseman_id = await getLocalStorage('warehouseman_id');
             const PRD_ID = Math.floor(Math.random() * 1000000).toString();
-
             if (isNewProduct) {
-                console.log(`New product added: 
-          id: ${newProduct.id}
-          Name: ${newProduct.name}
-          Type: ${newProduct.type}
-          Price: ${newProduct.price}
-          Supplier: ${newProduct.supplier}
-          Barcode: ${currentProduct.barcode}
-          Stock: ${newProduct.stock[0].quantity}
-        `);
-                // await addProduct({ ...newProduct, id: PRD_ID, barcode: currentProduct.barcode, stock: [{ id: warehouseman_id, quantity: newProduct.stock[0].quantity }] })
-                setModalVisible(false);
-                setNewProduct({
-                    id: '',
-                    name: '',
-                    type: '',
-                    price: '',
-                    supplier: '',
-                    barcode: '',
-                    stock: [{
-                        id: '',
-                        quantity: 0
-                    }]
-                });
+                try {
+                    const response = await useFetch<{ data: Product, status: number }>('products',
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                ...newProduct,
+                                id: PRD_ID,
+                                barcode: currentProduct.barcode,
+                                stocks: [
+                                    {id: warehouseman_id, quantity: newProduct.stock[0].quantity}
+                                ]
+                            }),
+                        },
+                    );
+                    console.log(response);
+                } catch (error: any) {
+                    console.log(error);
+                }
             } else if (isTransferProduct) {
-                // Add new stock for current warehouse
-                // const result = await updateStock(currentProduct, {
-                //     id: warehouseman_id,
-                //     quantity: newProduct.stock[0].quantity
-                // });
-                //
-                // if (result.status) {
-                //     Alert.alert('Success', 'Stock added successfully');
-                // } else {
-                //     Alert.alert('Error', 'Failed to add stock');
-                // }
+                const existingStockIndex = currentProduct.stock.findIndex(
+                    (stock: any) => stock.id === warehouseman_id
+                );
+                let updatedStock;
+
+                if (existingStockIndex !== -1) {
+                    // If the warehouseman_id exists, update the quantity
+                    updatedStock = currentProduct.stock.map((stock: any, index: number) => {
+                        if (index === existingStockIndex) {
+                            return {
+                                ...stock,
+                                quantity: stock.quantity + newProduct.stock[0].quantity, // Add the new quantity to the existing quantity
+                            };
+                        }
+                        return stock;
+                    });
+                } else {
+                    // If the warehouseman_id doesn't exist, add a new stock entry
+                    updatedStock = [
+                        ...currentProduct.stock,
+                        { id: warehouseman_id, quantity: newProduct.stock[0].quantity },
+                    ];
+                }
+
+                const updatedData = {
+                    ...currentProduct,
+                    stock: updatedStock, // Use the updated stock array
+                };
+                try {
+                    const response = await useFetch<{ product: Product, status: number }>(`products/${currentProduct.id}`,
+                        {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(updatedData)
+                        }
+                    )
+                    console.log(response);
+                } catch (error: any) {
+                    console.log(error);
+                }
             } else {
                 console.log(`Added ${newProduct.stock[0].quantity} of ${currentProduct.name} - ${currentProduct.supplier} , id: ${currentProduct.id}`);
                 // await updateStock(currentProduct, newProduct.stock[0])
@@ -133,7 +170,7 @@ export default function BarcodeScanner() {
                 id: '',
                 name: '',
                 type: '',
-                price: '',
+                price: 0,
                 supplier: '',
                 barcode: '',
                 stock: [{
@@ -147,6 +184,21 @@ export default function BarcodeScanner() {
         }
     };
 
+    const renderField = (label: string, value: any, placeholder: string, onChangeText: any, keyboardType = 'default', elementType: string) => (
+        <View style={styles.fieldContainer}>
+            {elementType === 'input' ? (
+                <>
+                    <Text style={styles.label}>{label}</Text>
+                    <TextInput style={styles.input} placeholder={placeholder} placeholderTextColor="#9CA3AF"
+                               value={value}
+                               onChangeText={onChangeText}/>
+                </>
+            ) : (
+                <Text style={styles.label}>{label}: {value}</Text>
+            )}
+        </View>
+    );
+
     return (
         <View style={styles.container}>
             <CameraView
@@ -157,10 +209,21 @@ export default function BarcodeScanner() {
                     barcodeTypes: ['ean13', 'upc_a'],
                 }}
             >
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.button} onPress={() => setScanned(false)}>
-                        <Text style={styles.text}>Scan Again</Text>
-                    </TouchableOpacity>
+                <View style={styles.overlay}>
+                    <View style={[styles.scanArea, {width: width * 0.9, height: width * 0.7}]}>
+                        <View style={styles.scanFrame}/>
+                        {scanned && (
+                            <View style={styles.scanButtonContainer}>
+                                <TouchableOpacity
+                                    style={styles.scanButton}
+                                    onPress={() => setScanned(false)}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={styles.scanButtonText}>Scan Again</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
                 </View>
             </CameraView>
 
@@ -171,101 +234,149 @@ export default function BarcodeScanner() {
                 onRequestClose={() => setModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalView}>
-                        <Text style={styles.modalTitle}>
-                            {isNewProduct ? 'Add New Product' : 'Product Found'}
-                        </Text>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        style={styles.container}
+                    >
+                        <ScrollView style={styles.scrollView}>
+                            <View style={styles.formContainer}>
+                                {!isNewProduct ? (
+                                    // View Product Mode
+                                    <View style={styles.productInfo}>
+                                        <View style={styles.header}>
+                                            <Text style={styles.headerText}>Product Details</Text>
+                                        </View>
 
-                        {!isNewProduct && (
-                            <>
-                                <Text style={styles.productName}><Text style={{ fontWeight: 'bold' }}>Name: </Text> {currentProduct?.name} </Text>
-                                <Text style={styles.productName}><Text style={{ fontWeight: 'bold' }}>Type: </Text> {currentProduct?.type} </Text>
-                                <Text style={styles.productName}><Text style={{ fontWeight: 'bold' }}>Supplier: </Text> {currentProduct?.supplier} </Text>
-                                <Text style={styles.productName}><Text style={{ fontWeight: 'bold' }}>Price: </Text> {currentProduct?.price} </Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Enter quantity"
-                                    keyboardType="numeric"
-                                    value={newProduct.stock[0].quantity.toString()}
-                                    onChangeText={(value) => setNewProduct({
-                                        ...newProduct,
-                                        stock: [{ ...newProduct.stock[0], quantity: parseInt(value) || 0 }]
-                                    })}
-                                />
-                            </>
-                        )}
+                                        {renderField(
+                                            'Name',
+                                            currentProduct?.name,
+                                            'Product name',
+                                            null,
+                                            'default',
+                                            'text',
+                                        )}
+                                        {renderField(
+                                            'Type',
+                                            currentProduct?.type,
+                                            'Product type',
+                                            null,
+                                            'default',
+                                            'text',
+                                        )}
+                                        {renderField(
+                                            'Supplier',
+                                            currentProduct?.supplier,
+                                            'Supplier name',
+                                            null,
+                                            'default',
+                                            'text',
+                                        )}
+                                        {renderField(
+                                            'Price',
+                                            currentProduct?.price,
+                                            'Price',
+                                            null,
+                                            'decimal-pad',
+                                            'text',
+                                        )}
+                                        {renderField(
+                                            'Quantity',
+                                            newProduct?.stock[0]?.quantity.toString() || '0',
+                                            'Quantity you want to add',
+                                            (value: any) => setNewProduct({
+                                                ...newProduct,
+                                                stock: [{...newProduct.stock[0], quantity: parseInt(value) || 0}]
+                                            }),
+                                            'numeric',
+                                            'input',
+                                        )}\
+                                    </View>
+                                ) : (
+                                    // New Product Mode
+                                    <View style={styles.productInfo}>
+                                        <View style={styles.header}>
+                                            <Text style={styles.headerText}>New Product</Text>
+                                        </View>
 
-                        {isNewProduct && (
-                            <View style={styles.inputContainer}>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Product Name"
-                                    value={newProduct.name}
-                                    onChangeText={(value) => setNewProduct({ ...newProduct, name: value })}
-                                />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Product Type"
-                                    value={newProduct.type}
-                                    onChangeText={(value) => setNewProduct({ ...newProduct, type: value })}
-                                />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Price"
-                                    keyboardType="decimal-pad"
-                                    value={newProduct.price}
-                                    onChangeText={(value) => setNewProduct({ ...newProduct, price: value })}
-                                />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Supplier"
-                                    value={newProduct.supplier}
-                                    onChangeText={(value) => setNewProduct({ ...newProduct, supplier: value })}
-                                />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Quantity"
-                                    keyboardType="numeric"
-                                    value={newProduct.stock[0].quantity.toString()}
-                                    onChangeText={(value) => setNewProduct({
-                                        ...newProduct,
-                                        stock: [{ ...newProduct.stock[0], quantity: parseInt(value) || 0 }]
-                                    })}
-                                />
+                                        {renderField(
+                                            'Name',
+                                            newProduct.name,
+                                            'Enter product name',
+                                            (value: any) => setNewProduct({...newProduct, name: value}),
+                                            'default',
+                                            'input',
+                                        )}
+                                        {renderField(
+                                            'Type',
+                                            newProduct.type,
+                                            'Enter product type',
+                                            (value: any) => setNewProduct({...newProduct, type: value}),
+                                            'default',
+                                            'input',
+                                        )}
+                                        {renderField(
+                                            'Price',
+                                            newProduct.price,
+                                            'Enter price',
+                                            (value: any) => setNewProduct({...newProduct, price: value}),
+                                            'decimal-pad',
+                                            'input',
+                                        )}
+                                        {renderField(
+                                            'Supplier',
+                                            newProduct.supplier,
+                                            'Enter supplier',
+                                            (value: any) => setNewProduct({...newProduct, supplier: value}),
+                                            'default',
+                                            'input',
+                                        )}
+                                        {renderField(
+                                            'Quantity',
+                                            newProduct.stock[0].quantity.toString(),
+                                            'Enter quantity',
+                                            (value: any) => setNewProduct({
+                                                ...newProduct,
+                                                stock: [{...newProduct.stock[0], quantity: parseInt(value) || 0}]
+                                            }),
+                                            'numeric',
+                                            'input',
+                                        )}
+                                    </View>
+                                )}
+
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity
+                                        style={[styles.button, styles.cancelButton]}
+                                        onPress={() => {
+                                            setModalVisible(false);
+                                            setNewProduct({
+                                                id: '',
+                                                name: '',
+                                                type: '',
+                                                price: 0,
+                                                supplier: '',
+                                                barcode: '',
+                                                stock: [{
+                                                    id: '',
+                                                    quantity: 0
+                                                }]
+                                            });
+                                        }}
+                                    >
+                                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.button, styles.submitButton]}
+                                        onPress={handleSubmit}
+                                    >
+                                        <Text style={styles.submitButtonText}>
+                                            {isNewProduct ? 'Save' : 'Add'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-                        )}
-
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => {
-                                    setModalVisible(false);
-                                    setNewProduct({
-                                        id: '',
-                                        name: '',
-                                        type: '',
-                                        price: '',
-                                        supplier: '',
-                                        barcode: '',
-                                        stock: [{
-                                            id: '',
-                                            quantity: 0
-                                        }]
-                                    });
-                                }}
-                            >
-                                <Text style={styles.modalButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.confirmButton]}
-                                onPress={handleSubmit}
-                            >
-                                <Text style={styles.modalButtonText}>
-                                    {isNewProduct ? 'Save' : 'Add'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                        </ScrollView>
+                    </KeyboardAvoidingView>
                 </View>
             </Modal>
         </View>
@@ -284,47 +395,15 @@ const styles = StyleSheet.create({
     camera: {
         flex: 1,
     },
-    buttonContainer: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'flex-end',
-        marginBottom: 30,
-        backgroundColor: 'transparent',
-        gap: 15,
-    },
-    button: {
-        backgroundColor: '#6c5ce7',
-        padding: 15,
-        borderRadius: 12,
-        width: '48%',
-        height: 60,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#6c5ce7',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 5,
-    },
-    text: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: 'white',
-    },
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'flex-end',
     },
     modalView: {
         backgroundColor: 'white',
         borderRadius: 20,
-        padding: 25,
+        padding: 30,
         width: '90%',
         maxHeight: '80%',
         alignItems: 'center',
@@ -352,16 +431,6 @@ const styles = StyleSheet.create({
         width: '100%',
         gap: 10,
     },
-    input: {
-        width: '100%',
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 10,
-        fontSize: 16,
-        backgroundColor: '#fff',
-    },
     modalButtons: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -374,9 +443,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
     },
-    cancelButton: {
-        backgroundColor: '#ff4757',
-    },
     confirmButton: {
         backgroundColor: '#6c5ce7',
     },
@@ -384,5 +450,166 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    formContainer: {},
+    header: {
+        marginBottom: 24,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+    },
+    headerText: {
+        fontSize: 24,
+        fontWeight: '600',
+        color: '#111827',
+    },
+    productInfo: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 24,
+    },
+    button: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginHorizontal: 6,
+    },
+    cancelButton: {
+        backgroundColor: '#F3F4F6',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    submitButton: {
+        backgroundColor: '#4F46E5',
+    },
+    cancelButtonText: {
+        color: '#374151',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    submitButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    scanArea: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative', // Added for absolute positioning of the button
+    },
+    scanFrame: {
+        width: '100%',
+        height: '100%',
+        borderWidth: 2,
+        borderColor: '#4F46E5',
+        borderRadius: 20,
+    },
+    scanButtonContainer: {
+        position: 'absolute',
+        bottom: -60, // Position below the scan frame
+        width: '100%',
+        alignItems: 'center',
+    },
+    scanButton: {
+        backgroundColor: '#4F46E5',
+        paddingHorizontal: 32,
+        paddingVertical: 12,
+        borderRadius: 25,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    scanButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    fieldContainer: {
+        marginBottom: 16,
+    },
+    labelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#374151',
+        letterSpacing: 0.25,
+    },
+    required: {
+        color: '#EF4444',
+        marginLeft: 4,
+    },
+    input: {
+        backgroundColor: '#F9FAFB',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        color: '#111827',
+        minHeight: 44, // Better touch target
+    },
+    inputError: {
+        borderColor: '#EF4444',
+        backgroundColor: '#FEF2F2',
+    },
+    inputDisabled: {
+        backgroundColor: '#F3F4F6',
+        borderColor: '#E5E7EB',
+        color: '#9CA3AF',
+    },
+    errorText: {
+        fontSize: 12,
+        color: '#EF4444',
+        marginTop: 4,
+    },
+    textContainer: {
+        backgroundColor: '#F9FAFB',
+        borderRadius: 8,
+        padding: 12,
+        minHeight: 44,
+    },
+    textContainerDisabled: {
+        backgroundColor: '#F3F4F6',
+    },
+    text: {
+        fontSize: 16,
+        color: '#111827',
+    },
+    textDisabled: {
+        color: '#9CA3AF',
     },
 });
