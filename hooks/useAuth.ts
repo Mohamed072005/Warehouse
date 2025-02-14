@@ -48,8 +48,8 @@ export const useAuth = () => {
             const warehousemans = response.data;
             const warehouseman: WareHouseMan = warehousemans.find((warehouseman: WareHouseMan) => warehouseman.secretKey === secretKey);
             if(warehouseman) {
+                await setLocalStorage('warehouseman_id', warehouseman.id.toString());
                 console.log(warehouseman.id);
-                await setLocalStorage('warehouseman_id', warehouseman.id);
                 router.push("/(tabs)");
             } else {
                 shake();
