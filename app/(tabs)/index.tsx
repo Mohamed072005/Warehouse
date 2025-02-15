@@ -1,88 +1,180 @@
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Link, router } from "expo-router";
-import { removeLocalStorage } from "@/lib/localStorages/storageManager";
+import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { router } from "expo-router";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import NavBar from "@/components/tabs/NavBar";
+import useApi from "@/hooks/useApi";
+import { useEffect, useCallback, memo, useState } from "react";
+
+interface Product {
+    price: number;
+    quantity: number;
+    stocks: Array<{
+        localisation?: {
+            city: string;
+        };
+    }>;
+}
+
+interface Statistics {
+    totalProducts: number;
+    totalStockValue: number;
+}
+
+// Memoized stat card component
+const StatCard = memo(({ title, value, icon, color }: {
+    title: string;
+    value: number | string;
+    icon: string;
+    color: string;
+}) => (
+    <View style={[styles.statCard, { backgroundColor: color }]}>
+        <MaterialCommunityIcons name={icon} size={24} color="white" />
+        <Text style={styles.statValue}>
+            {typeof value === 'number' ? value.toLocaleString() : value}
+        </Text>
+        <Text style={styles.statTitle}>{title}</Text>
+    </View>
+));
+
+const MENU_ITEMS = [
+    {
+        title: "Scanner",
+        icon: "barcode-scan",
+        description: "Scanner des codes-barres",
+        route: "/scanner",
+        color: "#8B5CF6"
+    },
+    {
+        title: "Stock",
+        icon: "clipboard-list",
+        description: "Gérer le stock",
+        route: "/stock",
+        color: "#7C3AED"
+    },
+    {
+        title: "Nouveau Produit",
+        icon: "plus-box",
+        description: "Ajouter un produit",
+        route: "/new-product",
+        color: "#6D28D9"
+    },
+    {
+        title: "Inventaire",
+        icon: "view-list",
+        description: "Voir l'inventaire",
+        route: "/inventory",
+        color: "#5B21B6"
+    }
+] as const;
 
 const HomeScreen = () => {
+    const { useFetch, loading, error } = useApi();
+    const [stats, setStats] = useState<Statistics>({
+        totalProducts: 0,
+        totalStockValue: 0
+    });
+    const [cityCount, setCityCount] = useState<number>(0);
 
-    const statsCards = [
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            // Fetch statistics
+            const statsResponse = await useFetch<{ data: Statistics; status: number }>('statistics', {
+                method: 'GET'
+            });
+
+            // Fetch products to calculate city count
+            const productsResponse = await useFetch<{ data: Product[]; status: number }>('products', {
+                method: 'GET'
+            });
+
+            if (statsResponse?.data) {
+                setStats(statsResponse.data);
+            }
+
+            if (productsResponse?.data) {
+                // Calculate unique cities
+                const cities = new Set();
+                productsResponse.data.forEach(product => {
+                    product.stocks.forEach(stock => {
+                        if (stock.localisation?.city) {
+                            cities.add(stock.localisation.city);
+                        }
+                    });
+                });
+                setCityCount(cities.size);
+            }
+        };
+
+        fetchDashboardData();
+    }, []);
+
+    const handleNavigation = useCallback((route: string) => {
+        router.push(route);
+    }, []);
+
+    const STATS_CONFIG = [
         {
             title: "Total Produits",
-            value: "1,234",
+            key: "totalProducts",
             icon: "package-variant",
-            color: "#8B5CF6"
+            color: "#8B5CF6",
+            value: stats.totalProducts
         },
         {
-            title: "En Stock",
-            value: "891",
-            icon: "warehouse",
-            color: "#7C3AED"
+            title: "Nombre de Villes",
+            key: "cityCount",
+            icon: "city",
+            color: "#7C3AED",
+            value: cityCount
         },
         {
-            title: "Alertes Stock",
-            value: "12",
-            icon: "alert-circle",
-            color: "#6D28D9"
+            title: "Valeur du Stock",
+            key: "totalStockValue",
+            icon: "cash",
+            color: "#6D28D9",
+            value: `${stats.totalStockValue.toLocaleString()} MAD`
         }
-    ];
-
-    const menuItems = [
-        {
-            title: "Scanner",
-            icon: "barcode-scan",
-            description: "Scanner des codes-barres",
-            route: "/scanner",
-            color: "#8B5CF6"
-        },
-        {
-            title: "Stock",
-            icon: "clipboard-list",
-            description: "Gérer le stock",
-            route: "/stock",
-            color: "#7C3AED"
-        },
-        {
-            title: "Nouveau Produit",
-            icon: "plus-box",
-            description: "Ajouter un produit",
-            route: "/new-product",
-            color: "#6D28D9"
-        },
-        {
-            title: "Inventaire",
-            icon: "view-list",
-            description: "Voir l'inventaire",
-            route: "/inventory",
-            color: "#5B21B6"
-        },
-    ];
+    ] as const;
 
     return (
         <SafeAreaView style={styles.container}>
             <NavBar />
             <View style={styles.content}>
-                <View style={styles.statsContainer}>
-                    {statsCards.map((stat, index) => (
-                        <View
-                            key={index}
-                            style={[styles.statCard, { backgroundColor: stat.color }]}
-                        >
-                            <MaterialCommunityIcons name={stat.icon} size={24} color="white" />
-                            <Text style={styles.statValue}>{stat.value}</Text>
-                            <Text style={styles.statTitle}>{stat.title}</Text>
-                        </View>
-                    ))}
-                </View>
+
+                {error ? (
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>
+                            Une erreur est survenue lors du chargement des données
+                        </Text>
+                    </View>
+                ) : (
+                    <View style={styles.statsContainer}>
+                        {loading ? (
+                            <View style={[styles.loadingIconContainer, {margin: 'auto'}]}>
+                                <ActivityIndicator size="large" color="#6D28D9" />
+                            </View>
+                        ) : (
+                            STATS_CONFIG.map((stat) => (
+                                <StatCard
+                                    key={stat.key}
+                                    title={stat.title}
+                                    value={stat.value}
+                                    icon={stat.icon}
+                                    color={stat.color}
+                                />
+                            ))
+                        )}
+                    </View>
+                )}
 
                 <Text style={styles.sectionTitle}>Actions Rapides</Text>
 
                 <View style={styles.menuGrid}>
-                    {menuItems.map((item, index) => (
+                    {MENU_ITEMS.map((item) => (
                         <TouchableOpacity
-                            key={index}
+                            key={item.route}
                             style={styles.menuItem}
-                            onPress={() => router.push(item.route)}
+                            onPress={() => handleNavigation(item.route)}
                         >
                             <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
                                 <MaterialCommunityIcons name={item.icon} size={32} color={item.color} />
@@ -107,10 +199,35 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
     },
+    headerContainer: {
+        marginBottom: 24,
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#1F2937',
+    },
+    headerSubtitle: {
+        fontSize: 14,
+        color: '#6B7280',
+        marginTop: 4,
+    },
     statsContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 24,
+        minHeight: 100,
+        alignItems: 'center',
+    },
+    errorContainer: {
+        padding: 16,
+        backgroundColor: '#FEE2E2',
+        borderRadius: 8,
+        marginBottom: 24,
+    },
+    errorText: {
+        color: '#DC2626',
+        textAlign: 'center',
     },
     statCard: {
         flex: 1,
@@ -177,6 +294,12 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#9CA3AF',
     },
+    loadingIconContainer: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    }
 });
 
 export default HomeScreen;
