@@ -68,7 +68,7 @@ export default function BarcodeScanner() {
 
     const handleBarCodeScanned = async ({type, data}: BarcodeScanningResult) => {
         setScanned(true);
-        setCurrentProduct({barcode: data, stocks: []}); // Initialize with an empty stock array
+        setCurrentProduct({barcode: data, stocks: []});
 
         try {
             const response = await useFetch<{ data: Product[], status: number }>('products', {method: 'GET'});
@@ -80,7 +80,7 @@ export default function BarcodeScanner() {
                     setIsTransferProduct(true)
                     setModalVisible(true);
                 } else {
-                    setCurrentProduct({barcode: data, stock: []}); // Ensure stock is initialized
+                    setCurrentProduct({barcode: data, stock: []});
                     setIsNewProduct(true);
                     setModalVisible(true);
                 }
@@ -131,7 +131,6 @@ export default function BarcodeScanner() {
                 let updatedStock;
 
                 if (existingStockIndex !== -1) {
-                    // If the warehouseman_id exists, update the quantity
                     updatedStock = currentProduct.stocks.map((stock: any, index: number) => {
                         if (index === existingStockIndex) {
                             return {
@@ -142,7 +141,6 @@ export default function BarcodeScanner() {
                         return stock;
                     });
                 } else {
-                    // If the warehouseman_id doesn't exist, add a new stock entry
                     updatedStock = [
                         ...currentProduct.stocks,
                         { id: STOCK_ID, quantity: newProduct.stocks[0].quantity }
@@ -173,7 +171,6 @@ export default function BarcodeScanner() {
                 }
             } else {
                 console.log(`Added ${newProduct.stocks[0].quantity} of ${currentProduct.name} - ${currentProduct.supplier} , id: ${currentProduct.id}`);
-                // await updateStock(currentProduct, newProduct.stock[0])
             }
 
             setModalVisible(false);

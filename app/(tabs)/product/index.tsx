@@ -7,7 +7,7 @@ import {
     FlatList,
     TouchableOpacity,
     RefreshControl,
-    Image
+    Image,
 } from "react-native";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import {useEffect, useState} from "react";
@@ -18,7 +18,9 @@ import NavBar from "@/components/tabs/NavBar";
 
 export const ProductScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
-    const { loading, useFetch, error } = useApi();
+    const [priceSort, setPriceSort] = useState<'none' | 'asc' | 'desc'>('none');
+    const [quantitySort, setQuantitySort] = useState<'none' | 'asc' | 'desc'>('none');
+    const { useFetch } = useApi();
     const [products, setProducts] = useState<Product[] | null>();
     const [refreshing, setRefreshing] = useState(false);
 
@@ -33,6 +35,53 @@ export const ProductScreen = () => {
     const onRefresh = () => {
         setRefreshing(true);
         setTimeout(() => setRefreshing(false), 1000);
+    };
+
+    const handlePriceSort = () => {
+        setPriceSort(current => {
+            if (current === 'none') return 'asc';
+            if (current === 'asc') return 'desc';
+            return 'none';
+        });
+        setQuantitySort('none');
+    };
+
+    const handleQuantitySort = () => {
+        setQuantitySort(current => {
+            if (current === 'none') return 'asc';
+            if (current === 'asc') return 'desc';
+            return 'none';
+        });
+        setPriceSort('none');
+    };
+
+    const getSortedProducts = (products: Product[] | undefined | null) => {
+        if (!products) return [];
+
+        let sortedProducts = [...products];
+
+        sortedProducts = sortedProducts.filter((product: Product) => {
+            return product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product?.barcode?.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+
+        if (priceSort !== 'none') {
+            sortedProducts.sort((a, b) => {
+                const priceA = parseFloat(a.price);
+                const priceB = parseFloat(b.price);
+                return priceSort === 'asc' ? priceA - priceB : priceB - priceA;
+            });
+        }
+
+        if (quantitySort !== 'none') {
+            sortedProducts.sort((a, b) => {
+                const quantityA = a.stocks.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+                const quantityB = b.stocks.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+                return quantitySort === 'asc' ? quantityA - quantityB : quantityB - quantityA;
+            });
+        }
+
+        return sortedProducts;
     };
 
     const ProductQuantityAndStock = ({ item }) => {
@@ -142,8 +191,48 @@ export const ProductScreen = () => {
                 />
             </View>
 
+            <View style={styles.filterContainer}>
+                <TouchableOpacity
+                    style={[
+                        styles.filterButtons,
+                        {backgroundColor: quantitySort !== 'none' ? "#c380ff" : "#fff"}
+                    ]}
+                    onPress={handleQuantitySort}
+                >
+                    <View style={styles.filterButtonContent}>
+                        <Text
+                            style={[
+                                styles.filterText,
+                                {color: quantitySort !== 'none' ? "#fff" : "#c380ff"}
+                            ]}
+                        >
+                            Quantity {quantitySort !== 'none' ? (quantitySort === 'asc' ? '↓' : '↑') : ''}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[
+                        styles.filterButtons,
+                        {backgroundColor: priceSort !== 'none' ? "#c380ff" : "#fff"}
+                    ]}
+                    onPress={handlePriceSort}
+                >
+                    <View style={styles.filterButtonContent}>
+                        <Text
+                            style={[
+                                styles.filterText,
+                                {color: priceSort !== 'none' ? "#fff" : "#c380ff"}
+                            ]}
+                        >
+                            Price {priceSort !== 'none' ? (priceSort === 'asc' ? '↓' : '↑') : ''}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
+
             <FlatList
-                data={products}
+                data={getSortedProducts(products)}
                 renderItem={renderProductCard}
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.productList}
@@ -316,6 +405,32 @@ const styles = StyleSheet.create({
     productImage: {
         width: '100%',
         height: '100%',
+    },
+    filterContainer: {
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        paddingHorizontal: 30,
+        alignItems: 'center',
+        marginBottom: 6
+    },
+    filterButtons: {
+        borderRadius: 25,
+        borderWidth: 1,
+        borderColor: '#a1a1a1',
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        minWidth: 100,
+        alignItems: 'center',
+    },
+    filterText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    filterButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
     },
 });
 
