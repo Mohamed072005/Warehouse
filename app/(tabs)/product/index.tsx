@@ -7,7 +7,7 @@ import {
     FlatList,
     TouchableOpacity,
     RefreshControl,
-    Image
+    Image,
 } from "react-native";
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import {useEffect, useState} from "react";
@@ -15,9 +15,14 @@ import {Product} from "@/lib/types/Product";
 import useApi from "@/hooks/useApi";
 import  {router} from "expo-router";
 import NavBar from "@/components/tabs/NavBar";
+import Slider from "@react-native-community/slider";
 
 export const ProductScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
+    const [minPrice, setMinPrice] = useState(0);
+    const [maxPrice, setMaxPrice] = useState(1000); // Adjust max price as needed
+    const [minQuantity, setMinQuantity] = useState(0);
+    const [maxQuantity, setMaxQuantity] = useState(100);
     const { loading, useFetch, error } = useApi();
     const [products, setProducts] = useState<Product[] | null>();
     const [refreshing, setRefreshing] = useState(false);
@@ -34,6 +39,16 @@ export const ProductScreen = () => {
         setRefreshing(true);
         setTimeout(() => setRefreshing(false), 1000);
     };
+
+    const filtredProducts = products?.filter((product: Product) => {
+        const matchesSearch = product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    product?.barcode?.toLowerCase().includes(searchQuery.toLowerCase());
+        // const matchesPrice = product?.price >= minPrice && product?.price <= maxPrice;
+        // const totalQuantity = product?.stocks?.reduce((sum, stock) => sum + stock.quantity, 0);
+        // const matchesQuantity = totalQuantity >= minQuantity && totalQuantity <= maxQuantity;
+
+        return matchesSearch;
+    })
 
     const ProductQuantityAndStock = ({ item }) => {
         let stockStatusColor, stockStatusText;
@@ -142,8 +157,39 @@ export const ProductScreen = () => {
                 />
             </View>
 
+            {/*<View style={styles.filterContainer}>*/}
+            {/*    <Text style={styles.filterLabel}>Prix: {minPrice} - {maxPrice} MAD</Text>*/}
+            {/*    <Slider*/}
+            {/*        style={styles.slider}*/}
+            {/*        minimumValue={0}*/}
+            {/*        maximumValue={1000}*/}
+            {/*        step={10}*/}
+            {/*        value={maxPrice}*/}
+            {/*        onValueChange={(value) => setMaxPrice(value)}*/}
+            {/*        minimumTrackTintColor="#6D28D9"*/}
+            {/*        maximumTrackTintColor="#E5E7EB"*/}
+            {/*        thumbTintColor="#6D28D9"*/}
+            {/*    />*/}
+            {/*</View>*/}
+
+            {/*/!* Quantity Filter *!/*/}
+            {/*<View style={styles.filterContainer}>*/}
+            {/*    <Text style={styles.filterLabel}>Quantité: {minQuantity} - {maxQuantity}</Text>*/}
+            {/*    <Slider*/}
+            {/*        style={styles.slider}*/}
+            {/*        minimumValue={0}*/}
+            {/*        maximumValue={100}*/}
+            {/*        step={1}*/}
+            {/*        value={maxQuantity}*/}
+            {/*        onValueChange={(value) => setMaxQuantity(value)}*/}
+            {/*        minimumTrackTintColor="#6D28D9"*/}
+            {/*        maximumTrackTintColor="#E5E7EB"*/}
+            {/*        thumbTintColor="#6D28D9"*/}
+            {/*    />*/}
+            {/*</View>*/}
+
             <FlatList
-                data={products}
+                data={filtredProducts}
                 renderItem={renderProductCard}
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.productList}
@@ -317,6 +363,18 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
     },
+    filterContainer: {
+        marginHorizontal: 16,
+        marginBottom: 16,
+    },
+    filterLabel: {
+        fontSize: 14,
+        color: '#4B5563',
+        marginBottom: 8,
+    },
+    slider: {
+        width: '100%',
+    }
 });
 
 export default ProductScreen;

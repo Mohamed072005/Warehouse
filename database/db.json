@@ -1,7 +1,7 @@
 {
   "products": [
     {
-      "id": 1,
+      "id": "1",
       "name": "Laptop HP Pavilion",
       "type": "Informatique",
       "barcode": "1234567890123",
@@ -39,7 +39,7 @@
       ]
     },
     {
-      "id": 2,
+      "id": "2",
       "name": "Clavier Mécanique Logitech",
       "type": "Accessoires",
       "barcode": "9876543210987",
@@ -76,69 +76,23 @@
       ]
     },
     {
-      "id": 3,
-      "name": "Pc Gamer Omen By HP",
-      "type": "Informatique",
-      "barcode": "1236543210987",
-      "price": 11000,
-      "supplier": "HP",
-      "image": "https://technoplace.ma/11482-large_default/hp-omen-17-i7-7700hq-173-16gb-2tb-geforce-gtx-10.jpg",
-      "stocks": [],
-      "editedBy": [
-        {
-          "warehousemanId": 1444,
-          "at": "2025-02-02"
-        }
-      ]
-    },
-    {
-      "id": "198241",
-      "name": "Sidi roubini",
+      "id": "727246",
+      "name": "Sidi Ali",
       "type": "Lma",
-      "price": "4",
+      "price": "5",
       "supplier": "Akhenouch",
-      "barcode": "6111128000088",
-      "stock": [
-        {
-          "id": "",
-          "quantity": 100
-        }
-      ],
+      "barcode": "6111035001673",
       "stocks": [
         {
           "id": "1444",
-          "quantity": 100
-        }
-      ]
-    },
-    {
-      "id": "157711",
-      "name": "Bimo b choklat",
-      "type": "Skimo",
-      "price": "20",
-      "supplier": "Wa3rin",
-      "barcode": "6111259344501",
-      "stock": [
-        {
-          "id": "",
-          "quantity": 5
-        },
-        {
-          "id": "1444",
-          "quantity": 3
-        }
-      ],
-      "stocks": [
-        {
-          "id": "1444",
-          "quantity": 5
+          "quantity": 400
         }
       ]
     }
   ],
   "warehousemans": [
     {
-      "id": 1333,
+      "id": "1333",
       "name": "Amine Boutaleb",
       "dob": "1988-05-02",
       "city": "Oujda",
@@ -146,7 +100,7 @@
       "warehouseId": 1999
     },
     {
-      "id": 1444,
+      "id": "1444",
       "name": "Karim El Mansouri",
       "dob": "1990-09-15",
       "city": "Marrakesh",
