@@ -15,15 +15,12 @@ import {Product} from "@/lib/types/Product";
 import useApi from "@/hooks/useApi";
 import  {router} from "expo-router";
 import NavBar from "@/components/tabs/NavBar";
-import Slider from "@react-native-community/slider";
 
 export const ProductScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [minPrice, setMinPrice] = useState(0);
-    const [maxPrice, setMaxPrice] = useState(1000); // Adjust max price as needed
-    const [minQuantity, setMinQuantity] = useState(0);
-    const [maxQuantity, setMaxQuantity] = useState(100);
-    const { loading, useFetch, error } = useApi();
+    const [priceSort, setPriceSort] = useState<'none' | 'asc' | 'desc'>('none');
+    const [quantitySort, setQuantitySort] = useState<'none' | 'asc' | 'desc'>('none');
+    const { useFetch } = useApi();
     const [products, setProducts] = useState<Product[] | null>();
     const [refreshing, setRefreshing] = useState(false);
 
@@ -40,15 +37,52 @@ export const ProductScreen = () => {
         setTimeout(() => setRefreshing(false), 1000);
     };
 
-    const filtredProducts = products?.filter((product: Product) => {
-        const matchesSearch = product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                    product?.barcode?.toLowerCase().includes(searchQuery.toLowerCase());
-        // const matchesPrice = product?.price >= minPrice && product?.price <= maxPrice;
-        // const totalQuantity = product?.stocks?.reduce((sum, stock) => sum + stock.quantity, 0);
-        // const matchesQuantity = totalQuantity >= minQuantity && totalQuantity <= maxQuantity;
+    const handlePriceSort = () => {
+        setPriceSort(current => {
+            if (current === 'none') return 'asc';
+            if (current === 'asc') return 'desc';
+            return 'none';
+        });
+        setQuantitySort('none');
+    };
 
-        return matchesSearch;
-    })
+    const handleQuantitySort = () => {
+        setQuantitySort(current => {
+            if (current === 'none') return 'asc';
+            if (current === 'asc') return 'desc';
+            return 'none';
+        });
+        setPriceSort('none');
+    };
+
+    const getSortedProducts = (products: Product[] | undefined | null) => {
+        if (!products) return [];
+
+        let sortedProducts = [...products];
+
+        sortedProducts = sortedProducts.filter((product: Product) => {
+            return product?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product?.barcode?.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+
+        if (priceSort !== 'none') {
+            sortedProducts.sort((a, b) => {
+                const priceA = parseFloat(a.price);
+                const priceB = parseFloat(b.price);
+                return priceSort === 'asc' ? priceA - priceB : priceB - priceA;
+            });
+        }
+
+        if (quantitySort !== 'none') {
+            sortedProducts.sort((a, b) => {
+                const quantityA = a.stocks.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+                const quantityB = b.stocks.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+                return quantitySort === 'asc' ? quantityA - quantityB : quantityB - quantityA;
+            });
+        }
+
+        return sortedProducts;
+    };
 
     const ProductQuantityAndStock = ({ item }) => {
         let stockStatusColor, stockStatusText;
@@ -157,39 +191,48 @@ export const ProductScreen = () => {
                 />
             </View>
 
-            {/*<View style={styles.filterContainer}>*/}
-            {/*    <Text style={styles.filterLabel}>Prix: {minPrice} - {maxPrice} MAD</Text>*/}
-            {/*    <Slider*/}
-            {/*        style={styles.slider}*/}
-            {/*        minimumValue={0}*/}
-            {/*        maximumValue={1000}*/}
-            {/*        step={10}*/}
-            {/*        value={maxPrice}*/}
-            {/*        onValueChange={(value) => setMaxPrice(value)}*/}
-            {/*        minimumTrackTintColor="#6D28D9"*/}
-            {/*        maximumTrackTintColor="#E5E7EB"*/}
-            {/*        thumbTintColor="#6D28D9"*/}
-            {/*    />*/}
-            {/*</View>*/}
+            <View style={styles.filterContainer}>
+                <TouchableOpacity
+                    style={[
+                        styles.filterButtons,
+                        {backgroundColor: quantitySort !== 'none' ? "#c380ff" : "#fff"}
+                    ]}
+                    onPress={handleQuantitySort}
+                >
+                    <View style={styles.filterButtonContent}>
+                        <Text
+                            style={[
+                                styles.filterText,
+                                {color: quantitySort !== 'none' ? "#fff" : "#c380ff"}
+                            ]}
+                        >
+                            Quantity {quantitySort !== 'none' ? (quantitySort === 'asc' ? '↓' : '↑') : ''}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
 
-            {/*/!* Quantity Filter *!/*/}
-            {/*<View style={styles.filterContainer}>*/}
-            {/*    <Text style={styles.filterLabel}>Quantité: {minQuantity} - {maxQuantity}</Text>*/}
-            {/*    <Slider*/}
-            {/*        style={styles.slider}*/}
-            {/*        minimumValue={0}*/}
-            {/*        maximumValue={100}*/}
-            {/*        step={1}*/}
-            {/*        value={maxQuantity}*/}
-            {/*        onValueChange={(value) => setMaxQuantity(value)}*/}
-            {/*        minimumTrackTintColor="#6D28D9"*/}
-            {/*        maximumTrackTintColor="#E5E7EB"*/}
-            {/*        thumbTintColor="#6D28D9"*/}
-            {/*    />*/}
-            {/*</View>*/}
+                <TouchableOpacity
+                    style={[
+                        styles.filterButtons,
+                        {backgroundColor: priceSort !== 'none' ? "#c380ff" : "#fff"}
+                    ]}
+                    onPress={handlePriceSort}
+                >
+                    <View style={styles.filterButtonContent}>
+                        <Text
+                            style={[
+                                styles.filterText,
+                                {color: priceSort !== 'none' ? "#fff" : "#c380ff"}
+                            ]}
+                        >
+                            Price {priceSort !== 'none' ? (priceSort === 'asc' ? '↓' : '↑') : ''}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
 
             <FlatList
-                data={filtredProducts}
+                data={getSortedProducts(products)}
                 renderItem={renderProductCard}
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.productList}
@@ -364,17 +407,31 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     filterContainer: {
-        marginHorizontal: 16,
-        marginBottom: 16,
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        paddingHorizontal: 30,
+        alignItems: 'center',
+        marginBottom: 6
     },
-    filterLabel: {
-        fontSize: 14,
-        color: '#4B5563',
-        marginBottom: 8,
+    filterButtons: {
+        borderRadius: 25,
+        borderWidth: 1,
+        borderColor: '#a1a1a1',
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        minWidth: 100,
+        alignItems: 'center',
     },
-    slider: {
-        width: '100%',
-    }
+    filterText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    filterButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
 });
 
 export default ProductScreen;
