@@ -26,8 +26,11 @@ interface NewProduct {
     supplier: string;
     stocks: [{
         id: string,
-        quantity: number
-    }]
+        quantity: number,
+        localisation: {
+            city: string;
+        }
+    }],
 }
 
 export default function BarcodeScanner() {
@@ -49,7 +52,10 @@ export default function BarcodeScanner() {
         barcode: '',
         stocks: [{
             id: '',
-            quantity: 0
+            quantity: 0,
+            localisation: {
+                city: ''
+            }
         }]
     });
 
@@ -108,7 +114,7 @@ export default function BarcodeScanner() {
                                 id: PRD_ID,
                                 barcode: currentProduct.barcode,
                                 stocks: [
-                                    {id: STOCK_ID, quantity: newProduct.stocks[0].quantity}
+                                    {id: STOCK_ID, quantity: newProduct.stocks[0].quantity, localisation: { city: newProduct.stocks[0].localisation.city }},
                                 ],
                                 editedBy: [
                                     {
@@ -184,7 +190,10 @@ export default function BarcodeScanner() {
                 barcode: '',
                 stocks: [{
                     id: '',
-                    quantity: 0
+                    quantity: 0,
+                    localisation: {
+                        city: ''
+                    }
                 }]
             });
         } catch (error) {
@@ -324,6 +333,17 @@ export default function BarcodeScanner() {
                                             'input',
                                         )}
                                         {renderField(
+                                            'City',
+                                            newProduct.stocks[0].localisation.city,
+                                            'Enter stock city',
+                                            (value: any) => setNewProduct({
+                                                ...newProduct,
+                                                stocks: [{...newProduct.stocks[0], localisation: { city: value } }]
+                                            }),
+                                            'default',
+                                            'input',
+                                        )}
+                                        {renderField(
                                             'Price',
                                             newProduct.price,
                                             'Enter price',
@@ -367,7 +387,10 @@ export default function BarcodeScanner() {
                                                 barcode: '',
                                                 stocks: [{
                                                     id: '',
-                                                    quantity: 0
+                                                    quantity: 0,
+                                                    localisation: {
+                                                        city: '',
+                                                    }
                                                 }]
                                             });
                                         }}

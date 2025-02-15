@@ -76,16 +76,25 @@
       ]
     },
     {
-      "id": "727246",
+      "id": "725458",
       "name": "Sidi Ali",
       "type": "Lma",
-      "price": "5",
-      "supplier": "Akhenouch",
+      "price": "4",
+      "supplier": "Akheniuch",
       "barcode": "6111035001673",
       "stocks": [
         {
-          "id": "1444",
-          "quantity": 400
+          "id": "585402",
+          "quantity": 100,
+          "localisation": {
+            "city": "Khouribga"
+          }
+        }
+      ],
+      "editedBy": [
+        {
+          "warehousemanId": "1444",
+          "at": "2025-02-15"
         }
       ]
     }
