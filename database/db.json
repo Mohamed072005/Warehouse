@@ -97,6 +97,29 @@
           "at": "2025-02-15"
         }
       ]
+    },
+    {
+      "id": "195618",
+      "name": "AIN soltan",
+      "type": "Lma",
+      "price": "10",
+      "supplier": "Ma3art",
+      "barcode": "5111042660130",
+      "stocks": [
+        {
+          "id": "809683",
+          "quantity": 100,
+          "localisation": {
+            "city": "Casablanca"
+          }
+        }
+      ],
+      "editedBy": [
+        {
+          "warehousemanId": "1444",
+          "at": "2025-02-16"
+        }
+      ]
     }
   ],
   "warehousemans": [

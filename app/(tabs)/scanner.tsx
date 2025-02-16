@@ -11,38 +11,23 @@ import {
     Alert,
     KeyboardAvoidingView, Platform, ScrollView, useWindowDimensions
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getLocalStorage} from "@/lib/localStorages/storageManager";
 import useApi from "@/hooks/useApi";
-import {Product} from "@/lib/types/Product";
-import {red} from "react-native-reanimated/lib/typescript/Colors";
-
-interface NewProduct {
-    id: string;
-    name: string;
-    type: string;
-    barcode: string;
-    price: number;
-    supplier: string;
-    stocks: [{
-        id: string,
-        quantity: number,
-        localisation: {
-            city: string;
-        }
-    }],
-}
+import {NewProduct, Product, ValidationErrors} from "@/lib/types/Product";
+import {validationProduct} from "@/lib/validations/validateProduct";
 
 export default function BarcodeScanner() {
 
     const {width} = useWindowDimensions();
-    const {error, loading, useFetch} = useApi();
+    const {useFetch} = useApi();
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [isTransferProduct, setIsTransferProduct] = useState(false);
     const [currentProduct, setCurrentProduct] = useState<any>(null);
     const [isNewProduct, setIsNewProduct] = useState(false);
+    const [errors, setErrors] = useState<ValidationErrors>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [newProduct, setNewProduct] = useState<NewProduct>({
         id: '',
         name: '',
@@ -103,6 +88,17 @@ export default function BarcodeScanner() {
             const STOCK_ID = Math.floor(Math.random() * 1000000).toString();
             if (isNewProduct) {
                 try {
+                    const validationErrors = validationProduct(newProduct);
+                    setErrors(validationErrors);
+
+                    if (Object.keys(validationErrors).length > 0) {
+                        const allTouched = Object.keys(validationErrors).reduce((acc, key) => {
+                            acc[key] = true;
+                            return acc;
+                        }, {} as Record<string, boolean>);
+                        setTouched(allTouched);
+                        return;
+                    }
                     const response = await useFetch<{ data: Product, status: number }>('products',
                         {
                             method: 'POST',
@@ -114,7 +110,11 @@ export default function BarcodeScanner() {
                                 id: PRD_ID,
                                 barcode: currentProduct.barcode,
                                 stocks: [
-                                    {id: STOCK_ID, quantity: newProduct.stocks[0].quantity, localisation: { city: newProduct.stocks[0].localisation.city }},
+                                    {
+                                        id: STOCK_ID,
+                                        quantity: newProduct.stocks[0].quantity,
+                                        localisation: {city: newProduct.stocks[0].localisation.city}
+                                    },
                                 ],
                                 editedBy: [
                                     {
@@ -149,7 +149,7 @@ export default function BarcodeScanner() {
                 } else {
                     updatedStock = [
                         ...currentProduct.stocks,
-                        { id: STOCK_ID, quantity: newProduct.stocks[0].quantity }
+                        {id: STOCK_ID, quantity: newProduct.stocks[0].quantity}
                     ];
                 }
 
@@ -162,7 +162,10 @@ export default function BarcodeScanner() {
                     }]
                 };
                 try {
-                    const response = await useFetch<{ product: Product, status: number }>(`products/${currentProduct.id}`,
+                    const response = await useFetch<{
+                        product: Product,
+                        status: number
+                    }>(`products/${currentProduct.id}`,
                         {
                             method: 'PUT',
                             headers: {
@@ -202,14 +205,32 @@ export default function BarcodeScanner() {
         }
     };
 
-    const renderField = (label: string, value: any, placeholder: string, onChangeText: any, keyboardType = 'default', elementType: string) => (
+    const renderField = (label: string, value: any, placeholder: string, onChangeText: any, keyboardType = 'default', elementType: string, fieldName: string) => (
         <View style={styles.fieldContainer}>
             {elementType === 'input' ? (
                 <>
-                    <Text style={styles.label}>{label}</Text>
-                    <TextInput style={styles.input} placeholder={placeholder} placeholderTextColor="#9CA3AF"
-                               value={value}
-                               onChangeText={onChangeText}/>
+                    <View style={styles.labelContainer}>
+                        <Text style={styles.label}>{label}</Text>
+                        <Text style={styles.required}>*</Text>
+                    </View>
+                    <TextInput
+                        style={[
+                            styles.input,
+                            touched[fieldName] && errors[fieldName] && styles.inputError
+                        ]}
+                        placeholder={placeholder}
+                        placeholderTextColor="#9CA3AF"
+                        value={value}
+                        onChangeText={(text) => {
+                            onChangeText(text);
+                            setTouched(prev => ({...prev, [fieldName]: true}));
+                        }}
+                        onBlur={() => setTouched(prev => ({...prev, [fieldName]: true}))}
+                        keyboardType={keyboardType}
+                    />
+                    {touched[fieldName] && errors[fieldName] && (
+                        <Text style={styles.errorText}>{errors[fieldName]}</Text>
+                    )}
                 </>
             ) : (
                 <Text style={styles.label}>{label}: {value}</Text>
@@ -272,6 +293,7 @@ export default function BarcodeScanner() {
                                             null,
                                             'default',
                                             'text',
+                                            'name'
                                         )}
                                         {renderField(
                                             'Type',
@@ -280,6 +302,7 @@ export default function BarcodeScanner() {
                                             null,
                                             'default',
                                             'text',
+                                            'type'
                                         )}
                                         {renderField(
                                             'Supplier',
@@ -288,6 +311,7 @@ export default function BarcodeScanner() {
                                             null,
                                             'default',
                                             'text',
+                                            'supplier'
                                         )}
                                         {renderField(
                                             'Price',
@@ -296,17 +320,19 @@ export default function BarcodeScanner() {
                                             null,
                                             'decimal-pad',
                                             'text',
+                                            'price'
                                         )}
                                         {renderField(
                                             'Quantity',
                                             newProduct?.stocks[0]?.quantity.toString() || '0',
-                                            'Quantity you want to add',
+                                            'Quantity you want to add to the product',
                                             (value: any) => setNewProduct({
                                                 ...newProduct,
                                                 stocks: [{...newProduct.stocks[0], quantity: parseInt(value) || 0}]
                                             }),
                                             'numeric',
                                             'input',
+                                            'quantity'
                                         )}\
                                     </View>
                                 ) : (
@@ -323,6 +349,7 @@ export default function BarcodeScanner() {
                                             (value: any) => setNewProduct({...newProduct, name: value}),
                                             'default',
                                             'input',
+                                            'name'
                                         )}
                                         {renderField(
                                             'Type',
@@ -331,6 +358,7 @@ export default function BarcodeScanner() {
                                             (value: any) => setNewProduct({...newProduct, type: value}),
                                             'default',
                                             'input',
+                                            'type'
                                         )}
                                         {renderField(
                                             'City',
@@ -338,10 +366,11 @@ export default function BarcodeScanner() {
                                             'Enter stock city',
                                             (value: any) => setNewProduct({
                                                 ...newProduct,
-                                                stocks: [{...newProduct.stocks[0], localisation: { city: value } }]
+                                                stocks: [{...newProduct.stocks[0], localisation: {city: value}}]
                                             }),
                                             'default',
                                             'input',
+                                            'city'
                                         )}
                                         {renderField(
                                             'Price',
@@ -350,6 +379,7 @@ export default function BarcodeScanner() {
                                             (value: any) => setNewProduct({...newProduct, price: value}),
                                             'decimal-pad',
                                             'input',
+                                            'price'
                                         )}
                                         {renderField(
                                             'Supplier',
@@ -358,6 +388,7 @@ export default function BarcodeScanner() {
                                             (value: any) => setNewProduct({...newProduct, supplier: value}),
                                             'default',
                                             'input',
+                                            'supplier'
                                         )}
                                         {renderField(
                                             'Quantity',
@@ -369,6 +400,7 @@ export default function BarcodeScanner() {
                                             }),
                                             'numeric',
                                             'input',
+                                            'quantity'
                                         )}
                                     </View>
                                 )}
@@ -614,10 +646,6 @@ const styles = StyleSheet.create({
         color: '#111827',
         minHeight: 44, // Better touch target
     },
-    inputError: {
-        borderColor: '#EF4444',
-        backgroundColor: '#FEF2F2',
-    },
     inputDisabled: {
         backgroundColor: '#F3F4F6',
         borderColor: '#E5E7EB',
@@ -643,5 +671,9 @@ const styles = StyleSheet.create({
     },
     textDisabled: {
         color: '#9CA3AF',
+    },
+    inputError: {
+        borderColor: '#EF4444',
+        backgroundColor: '#FEF2F2',
     },
 });
