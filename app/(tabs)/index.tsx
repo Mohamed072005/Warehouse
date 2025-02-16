@@ -45,18 +45,11 @@ const MENU_ITEMS = [
         color: "#8B5CF6"
     },
     {
-        title: "Stock",
-        icon: "clipboard-list",
-        description: "Gérer le stock",
-        route: "/stock",
+        title: "Products",
+        icon: "package-variant",
+        description: "Voir les produits",
+        route: "/product",
         color: "#7C3AED"
-    },
-    {
-        title: "Nouveau Produit",
-        icon: "plus-box",
-        description: "Ajouter un produit",
-        route: "/new-product",
-        color: "#6D28D9"
     },
     {
         title: "Inventaire",
@@ -92,7 +85,6 @@ const HomeScreen = () => {
             }
 
             if (productsResponse?.data) {
-                // Calculate unique cities
                 const cities = new Set();
                 productsResponse.data.forEach(product => {
                     product.stocks.forEach(stock => {

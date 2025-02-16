@@ -15,6 +15,7 @@ import {Product} from "@/lib/types/Product";
 import useApi from "@/hooks/useApi";
 import  {router} from "expo-router";
 import NavBar from "@/components/tabs/NavBar";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export const ProductScreen = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -170,7 +171,7 @@ export const ProductScreen = () => {
                             params: { productDetail: JSON.stringify(item) },
                         })
                     }>
-                    <MaterialCommunityIcons name="pencil" size={20} color="#6D28D9" />
+                    <MaterialIcons  name="preview" size={20} color="#6D28D9" />
                     <Text style={styles.actionButtonText}>View Details</Text>
                 </TouchableOpacity>
             </View>
